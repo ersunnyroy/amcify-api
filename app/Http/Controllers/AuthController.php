@@ -4,44 +4,58 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
+use App\Models\User;
 
-class AuthController
+class AuthController extends Controller
 {
+    // Login method
     public function login(Request $request)
     {
-        // Validate incoming request
-        $validator = Validator::make($request->all(), [
+        $request->validate([
             'email' => 'required|email',
-            'password' => 'required|min:6',
+            'password' => 'required',
         ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
-        $credentials = $request->only('email', 'password');
-
-        if (Auth::attempt($credentials)) {
+        
+        // Attempt to log in the user
+        if (Auth::attempt($request->only('email', 'password'))) {
             $user = Auth::user();
-            $token = $user->createToken('authToken')->plainTextToken;
-
+            $token = $user->createToken(env('APP_NAME'))->plainTextToken; // Generate a token
             return response()->json([
-                'access_token' => $token,
-                'token_type' => 'Bearer',
-                'user' => $user,
+                'status' => true,
+                'data' => ['token' => $token,
+                'user' => $user,]
             ], 200);
-        } else {
-            return response()->json(['error' => 'Invalid credentials'], 401);
         }
+
+        return response()->json(['message' => 'Invalid credentials.'], 401);
     }
 
+    // Logout method
     public function logout(Request $request)
     {
-        // Revoke the token for the authenticated user
-        $user = Auth::user();
-        $user->currentAccessToken()->delete();
+        Auth::user()->tokens()->delete(); // Delete all tokens for the authenticated user
 
-        return response()->json(['message' => 'Logged out successfully'], 200);
+        return response()->json(['message' => 'Logged out successfully.']);
     }
+
+    // Reset Password Method
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|confirmed', // Ensure password confirmation
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+        
+        if (!$user) {
+            return response()->json(['message' => 'User not found.'], 404);
+        }
+
+        $user->password = bcrypt($request->password); // Hash the new password
+        $user->save();
+
+        return response()->json(['message' => 'Password reset successfully.']);
+    }
+
 }

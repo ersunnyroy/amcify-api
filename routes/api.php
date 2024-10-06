@@ -2,15 +2,18 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
-// use authcontroller;
 use App\Http\Controllers\AuthController;
 
 
-Route::middleware('api')->group(function () {
-    Route::post('/register', [AuthController::class, 'register']);
-    Route::post('/login', [AuthController::class, 'login']);
+Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
+    return $request->user();
+});
 
-    Route::middleware('auth:sanctum')->get('/user', [AuthController::class, 'getUser']);
-    // Add other protected routes here...
+
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+// Routes under api auth
+Route::middleware(['auth:sanctum', 'super_admin'])->group(function () {
+    // Route::post('/companies', [CompanyController::class, 'create']);
+    // Route::post('/logout', [AuthController::class, 'logout']);
 });
