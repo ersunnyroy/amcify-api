@@ -27,7 +27,7 @@ class AuthController extends Controller
             ], 200);
         }
 
-        return response()->json(['message' => 'Invalid credentials.'], 401);
+        return response()->json(['status' => false, 'message' => 'Invalid credentials.'], 401);
     }
 
     // Logout method
